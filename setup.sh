@@ -17,6 +17,20 @@
 #   Wave 4 : Step 5  — start stack       (needs steps 3 + 4 both done)
 #   Wave 5 : Step 6  — verify
 
+# ── Bootstrap: My-dev-setup ───────────────────────────────────────────────────
+_DEV_SETUP="/tmp/My-dev-setup"
+if [[ ! -d "$_DEV_SETUP/.git" ]]; then
+    echo "Cloning My-dev-setup → $_DEV_SETUP ..."
+    git clone https://github.com/KarneeshkarV/My-dev-setup/ "$_DEV_SETUP"
+fi
+
+# ── Delegate non-flag args to My-dev-setup/run.sh ────────────────────────────
+for _a in "$@"; do
+    if [[ "$_a" != --* ]]; then
+        exec "$_DEV_SETUP/run.sh" "$@"
+    fi
+done
+
 set -euo pipefail
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -34,6 +48,15 @@ export HF_TOKEN="${HF_TOKEN:-}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODULES="$SCRIPT_DIR/modules"
 source "$MODULES/lib.sh"
+
+# ── Require uv ────────────────────────────────────────────────────────────────
+if ! command -v uv &>/dev/null; then
+    info "uv not found — installing via My-dev-setup runs/python.sh ..."
+    bash "$_DEV_SETUP/runs/python.sh"
+    [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
+fi
+command -v uv &>/dev/null || die "uv is required but could not be installed"
+info "uv $(uv --version) — ready"
 
 # ── Parse flags ───────────────────────────────────────────────────────────────
 
